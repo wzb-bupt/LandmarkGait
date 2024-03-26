@@ -1,0 +1,81 @@
+# Note  : *** the batch_size should be equal to the gpus number at the test phase!!! ***
+data_cfg:
+  dataset_name: CASIA-B
+  dataset_root: < your dataset path >
+  dataset_partition: < your dataset_partition.json > # ./datasets/CASIA-B/CASIA-B.json
+  num_workers: 8
+  remove_no_gallery: false
+  test_dataset_name: CASIA-B
+
+evaluator_cfg:
+  enable_distributed: true
+  enable_float16: false 
+  restore_ckpt_strict: true
+  restore_hint: 30000
+  save_name: LandmarkGait_Landmark_to_Parsing
+  sampler:
+    batch_size: 8
+    sample_type: all_ordered
+    type: InferenceSampler
+
+loss_cfg:
+  - loss_term_weight: 1.0
+    type: Reconstruction
+    log_prefix: reconstruction1
+  - loss_term_weight: 1.0
+    type: Reconstruction
+    log_prefix: reconstruction2
+
+model_cfg:
+  model: LandmarkGait_Landmark_to_Parsing
+  landmarknet_cfg:
+    type: landmarknet
+    landmark_cfg:
+      channels: [32, 64, 128]  # channels for landmarknet
+      height: 64
+      width: 44
+      inv_std: 10
+      num_landmark: 25    # The number of landmarks
+      freeze_half: true   # freeze the encoder of landmarknet or not
+  kernel_size: 3
+
+  channels: [32, 64, 128]  # channels for parsingnet
+  class_num: 74
+  landmark_lr: 0.0001
+
+optimizer_cfg:
+  lr: 1.0e-4
+  momentum: 0.9
+  solver: Adam
+  weight_decay: 5.0e-4
+
+scheduler_cfg:
+  gamma: 0.1
+  milestones:
+    - 20000
+  scheduler: MultiStepLR
+
+trainer_cfg:
+  enable_distributed: true
+  enable_float16: false
+  log_iter: 100
+  restore_ckpt_strict: false
+  optimizer_reset: true
+  scheduler_reset: true
+  restore_hint: 
+    - < your pretrained LandmarkNet model.pt >
+    # Example: - ./output/CASIA-B/LandmarkGait_Silh_to_Landmark/LandmarkGait_Silh_to_Landmark/checkpoints/LandmarkGait_Silh_to_Landmark-30000.pt
+  save_iter: 10000
+  save_name: LandmarkGait_Landmark_to_Parsing
+  sync_BN: true
+  total_iter: 30000
+  sampler:
+    batch_shuffle: true
+    batch_size:
+      - 8
+      - 8
+    frames_num_fixed: 30 # frames in each sequence, this setting in the paper is 30 (but 10 is also work and fast)
+    frames_skip_num: 0
+    frames_skip_num: 0
+    sample_type: fixed_ordered
+    type: TripletSampler

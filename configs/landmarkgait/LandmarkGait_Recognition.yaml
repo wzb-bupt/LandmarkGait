@@ -1,0 +1,100 @@
+# Note  : *** the batch_size should be equal to the gpus number at the test phase!!! ***
+data_cfg:
+  dataset_name: CASIA-B
+  dataset_root: < your dataset path >
+  dataset_partition: < your dataset_partition.json > # ./datasets/CASIA-B/CASIA-B.json
+  num_workers: 8
+  remove_no_gallery: false
+  test_dataset_name: CASIA-B
+
+evaluator_cfg:
+  enable_distributed: true
+  enable_float16: false 
+  restore_ckpt_strict: true
+  restore_hint: 80000
+  save_name: LandmarkGait_Recognition
+  sampler:
+    batch_size: 8
+    sample_type: all_ordered
+    type: InferenceSampler
+
+loss_cfg:
+  - loss_term_weight: 1.0
+    margin: 0.2
+    type: TripletLoss
+    log_prefix: triplet
+  - loss_term_weight: 1.0
+    scale: 1
+    type: CrossEntropyLoss
+    log_accuracy: true
+    label_smooth: false
+    log_prefix: softmax
+  - loss_term_weight: 1.0
+    type: Reconstruction
+    log_prefix: reconstruction1
+  - loss_term_weight: 1.0
+    type: Reconstruction
+    log_prefix: reconstruction2
+
+model_cfg:
+  model: LandmarkGait_Recognition
+
+  # LandmarkNet
+  landmarknet_cfg:
+    type: landmarknet
+    landmark_cfg:
+      channels: [32, 64, 128]      # channels for landmarknet
+      height: 64
+      width: 44
+      inv_std: 10
+      num_landmark: 25
+      freeze_half: true            # freeze the encoder of landmarknet or not
+  kernel_size: 3
+
+  # ParsingNet
+  channels: [32, 64, 128]          # channels for parsingnet
+  landmark_lr: 0.0001
+
+  # LandmarkGait_Recognition
+  channels_PMBConv: [32, 64, 128]  # channels for feature extraction
+  class_num: 74
+  freeze_half_bodypart: true       # freeze parsingnet or not
+  roll_up: 3                       # The offset (k) of upper body in Parsing Parts Mixup
+  roll_low: 6                      # The offset (2k) of lower body in Parsing Parts Mixup
+
+  
+optimizer_cfg:
+  lr: 1.0e-4
+  momentum: 0.9
+  solver: Adam
+  weight_decay: 5.0e-4
+
+scheduler_cfg:
+  gamma: 0.1
+  milestones:
+    - 70000
+  scheduler: MultiStepLR
+
+trainer_cfg:
+  enable_distributed: true
+  enable_float16: false
+  log_iter: 100
+  restore_ckpt_strict: false
+  optimizer_reset: true
+  scheduler_reset: true
+  restore_hint: 
+    - < your pretrained ParsingNet model.pt >
+    # Example: - ./output/CASIA-B/LandmarkGait_Landmark_to_Parsing/LandmarkGait_Landmark_to_Parsing/checkpoints/LandmarkGait_Landmark_to_Parsing-30000.pt
+  save_iter: 10000
+  save_name: LandmarkGait_Recognition
+  sync_BN: true
+  total_iter: 80000
+  sampler:
+    batch_shuffle: true
+    batch_size:
+      - 8
+      - 8
+    frames_num_fixed: 30
+    frames_skip_num: 0
+    sample_type: fixed_ordered
+    type: TripletSampler
