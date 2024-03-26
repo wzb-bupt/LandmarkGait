@@ -64,25 +64,25 @@ We propose LandmarkGait, an unsupervised parsing-based solution that focuses on 
 
 3. Prepare dataset
     - In most cases, we strictly follow the setting of [OpenGait](https://github.com/ShiqiYu/OpenGait/blob/master/docs/2.prepare_dataset.md).
-    - Differently, since CASIA-B uses outdated background subtraction algorithm, we utilize a re-segment version from [Ren et al](https://arxiv.org/pdf/2207.11720) as CASIA-BN. You can find our segmentation results from [this url](https://github.com/wzb-bupt/GaitParsing).
+    - Differently, since CASIA-B uses outdated background subtraction algorithm, we utilize a re-segment version from [Ren et al](https://arxiv.org/pdf/2207.11720) as CASIA-BN.
 
 
 ## Training Details
 
 To achieve better convergence, we first train LandmarkNet and ParsingNet sequentially to obtain spatio-temporally consistent landmarks and parsing parts. Subsequently, we fix the encoder of LandmarkNet and use pre-trained weights to initiate these two networks and jointly train the subsequent recognition network end-to-end for final gait recognition.
 
-### Step1: LandmarkNet (Silhouette-to-Landmarks, [config](configs/landmarkgait_release/LandmarkGait_Silh_to_Landmark.yaml))
+### Step1: LandmarkNet (Silhouette-to-Landmarks, [config](configs/landmarkgait/LandmarkGait_Silh_to_Landmark.yaml))
 
 ```
 CUDA_VISIBLE_DEVICES=0,1,2,3 python -m torch.distributed.launch --nproc_per_node=4 opengait/main.py --cfgs ./configs/landmarkgait/LandmarkGait_Silh_to_Landmark.yaml --phase train --log_to_file
 ```
 
-### Step2: ParsingNet (Landmarks-to-Parsing, [config](configs/landmarkgait_release/LandmarkGait_Landmark_to_Parsing.yaml))
+### Step2: ParsingNet (Landmarks-to-Parsing, [config](configs/landmarkgait/LandmarkGait_Landmark_to_Parsing.yaml))
 ```
 CUDA_VISIBLE_DEVICES=0,1,2,3 python -m torch.distributed.launch --nproc_per_node=4 opengait/main.py --cfgs ./configs/landmarkgait/LandmarkGait_Landmark_to_Parsing.yaml --phase train --log_to_file
 ```
 
-### Step3: Multi-scale Feature Extraction Network (PMBC-Net, Recognition and Evaluation, [config](configs/landmarkgait_release/LandmarkGait_Recognition.yaml)) 
+### Step3: Multi-scale Feature Extraction Network (PMBC-Net, Recognition and Evaluation, [config](configs/landmarkgait/LandmarkGait_Recognition.yaml)) 
 ```
 CUDA_VISIBLE_DEVICES=0,1,2,3 python -m torch.distributed.launch --nproc_per_node=4 opengait/main.py --cfgs ./configs/landmarkgait/LandmarkGait_Recognition.yaml --phase train --log_to_file
 ```
@@ -109,8 +109,6 @@ If you find this codebase useful in your research, please consider citing:
         pages={2305--2314},
         year={2023}
     }
-
-For any questions, please contact Zengbin Wang (wzb1@bupt.edu.cn).
 
 ## Acknowledgement
 
